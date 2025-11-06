@@ -29,9 +29,16 @@ npm run build
 Create a `.env` file:
 
 ```env
-VITE_OPENAI_API_KEY=your_openai_key
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+For Supabase edge functions, set the following secrets in your Supabase project (or `supabase/functions/.env` when running locally):
+
+```env
+OPENAI_API_KEY=your_openai_key
+STRIPE_SECRET_KEY=your_stripe_secret
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```
 
 ## Tech Stack
@@ -52,9 +59,12 @@ src/
 ├── lib/           # Utility functions
 ├── App.tsx        # Main application component
 ├── main.tsx       # Application entry point
-├── menuData.ts    # Restaurant menu configuration
-├── openaiService.ts # AI service integration
+├── openaiService.ts # AI service integration (calls Supabase function)
 └── supabaseClient.ts # Supabase client setup
+
+shared/
+├── menuData.ts    # Restaurant menu configuration shared by frontend/backend
+└── aiTypes.ts     # Shared AI data structures
 ```
 
 ## License
