@@ -65,7 +65,6 @@
     ```env
     VITE_SUPABASE_URL="your-supabase-project-url"
     VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
-    VITE_OPENAI_API_KEY="your-openai-api-key"
     ```
 
 4.  **Run the development server:**
@@ -80,14 +79,14 @@
 
 -   `VITE_SUPABASE_URL`: The URL of your Supabase project.
 -   `VITE_SUPABASE_ANON_KEY`: The `anon` key for your Supabase project.
--   `VITE_OPENAI_API_KEY`: Your API key from OpenAI.
 
 ### Backend (Supabase Edge Functions)
 
-You need to set the following secrets for the `create-checkout-session` edge function in your Supabase project dashboard:
+You need to set the following secrets for Supabase edge functions in your Supabase project dashboard:
 
 -   `STRIPE_SECRET_KEY`: Your secret key from Stripe.
 -   `SUPABASE_SERVICE_ROLE_KEY`: The `service_role` key for your Supabase project.
+-   `OPENAI_API_KEY`: Your OpenAI API key for the `ai-chat` function.
 -   `SUPABASE_URL`: The URL of your Supabase project.
 
 ## 🏗️ Project Structure
@@ -102,11 +101,15 @@ You need to set the following secrets for the `create-checkout-session` edge fun
 │   ├── App.css           # Main stylesheet
 │   ├── App.tsx           # Main application component
 │   ├── main.tsx          # Application entry point
-│   ├── menuData.ts       # Restaurant menu configuration
-│   ├── openaiService.ts  # OpenAI API integration service
+│   ├── openaiService.ts  # Frontend client for the AI service
 │   └── supabaseClient.ts # Supabase client initialization
+├── shared/
+│   ├── menuData.ts       # Restaurant menu configuration shared between client and edge functions
+│   └── aiTypes.ts        # Shared AI session/cart types
 ├── supabase/
 │   └── functions/
+│       ├── ai-chat/
+│       │   └── index.ts  # Supabase Edge Function proxying OpenAI chat completions
 │       └── create-checkout-session/
 │           └── index.ts  # Supabase Edge Function for Stripe checkout
 ├── .env                  # Environment variables
@@ -116,14 +119,14 @@ You need to set the following secrets for the `create-checkout-session` edge fun
 
 ## 🤖 API Documentation
 
-### OpenAI API
+### AI Conversation Service
 
-The conversational ordering is handled by the `openaiService.ts` file, which communicates with the OpenAI GPT-4 model. The service sends the user's input along with the conversation history and a system prompt that includes the restaurant's menu.
+The conversational ordering is handled by the frontend `openaiService.ts` module, which now invokes the `ai-chat` Supabase Edge Function. The edge function reads the OpenAI API key from server-only secrets, assembles the prompt with the restaurant menu, and proxies the request to OpenAI before returning the structured response expected by the UI.
 
 ### Supabase
 
 -   **Database**: The backend uses a Supabase PostgreSQL database to store `orders` and `order_items`.
--   **Edge Functions**: The `create-checkout-session` function is a Deno-based serverless function that securely communicates with the Stripe API to create payment sessions.
+-   **Edge Functions**: The `create-checkout-session` function handles Stripe checkout, and the `ai-chat` function securely wraps OpenAI chat completions for the AI assistant.
 
 ### Stripe API
 
@@ -158,7 +161,7 @@ The application is designed for easy deployment on platforms like Vercel, Netlif
 1.  **Connect your Git repository** to your chosen hosting provider.
 2.  **Configure the build command:** `pnpm build` (or `npm run build`).
 3.  **Set the publish directory:** `dist`.
-4.  **Add the environment variables** (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_OPENAI_API_KEY`) to your deployment platform's settings.
+4.  **Add the environment variables** (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) to your deployment platform's settings and configure the Supabase function secrets (`OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
 5.  **Deploy!**
 
 ## 💡 Development Guidelines
@@ -171,7 +174,7 @@ The application is designed for easy deployment on platforms like Vercel, Netlif
 
 ## 🐛 Troubleshooting
 
--   **AI is not responding**: Ensure your `VITE_OPENAI_API_KEY` is correct and has sufficient credits.
+-   **AI is not responding**: Ensure the `OPENAI_API_KEY` secret is set for the `ai-chat` Supabase function and has sufficient credits.
 -   **Checkout fails**: Verify that your `STRIPE_SECRET_KEY` and other Supabase secrets are correctly set in the Supabase dashboard for the edge function.
 -   **Items not adding to cart**: The AI uses a conversational flow. You need to confirm your selections with the AI before it adds items to the cart.
 

@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { RESTAURANT_CONFIG, MENU_LOOKUP } from './menuData';
+import { RESTAURANT_CONFIG, MENU_LOOKUP } from '../shared/menuData';
 import { processAIMessage as sendMessage, SessionState, CartItem } from './openaiService';
 import { ThemeToggle } from './components/ThemeToggle';
 import { ToastProvider } from './components/Toast';
