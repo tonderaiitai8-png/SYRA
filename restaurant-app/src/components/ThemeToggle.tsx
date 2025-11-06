@@ -3,16 +3,33 @@ import { useEffect, useState } from 'react';
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('theme');
-    return (saved as 'light' | 'dark') || 'light';
+    if (typeof window === 'undefined') {
+      return 'light';
+    }
+
+    try {
+      const saved = window.localStorage.getItem('theme');
+      return (saved as 'light' | 'dark') || 'light';
+    } catch {
+      return 'light';
+    }
   });
 
   useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
     // Remove any existing theme classes
     document.documentElement.classList.remove('light', 'dark');
     // Add the current theme class
     document.documentElement.classList.add(theme);
-    localStorage.setItem('theme', theme);
+
+    try {
+      window.localStorage.setItem('theme', theme);
+    } catch {
+      // Ignore write errors (e.g. disabled localStorage)
+    }
   }, [theme]);
 
   const toggleTheme = () => {
