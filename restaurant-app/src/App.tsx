@@ -18,7 +18,7 @@ import { useAnnounce } from './components/AccessibilityAnnouncer';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useCartPersistence } from './hooks/useCartPersistence';
 import { useRetry } from './hooks/useRetry';
-import { supabase } from './supabaseClient';
+import { maybeSupabase } from './supabaseClient';
 import { OrderConfirmation } from './components/OrderConfirmation';
 import './App.css';
 
@@ -40,6 +40,7 @@ function AppContent() {
   const [showCartRecovery, setShowCartRecovery] = useState(false);
   const [filteredMenuItems, setFilteredMenuItems] = useState<any[]>([]);
   const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
+  const [supabaseClient] = useState(() => maybeSupabase());
   
   const [session, setSession] = useState<SessionState>({
     cart: [],
@@ -57,6 +58,7 @@ function AppContent() {
   const { isOnline } = useOnlineStatus();
   const { loadCart, clearCart } = useCartPersistence(session.cart);
   const announce = useAnnounce();
+  const isCheckoutAvailable = Boolean(supabaseClient);
 
   // Filter function calls from AI responses
   const filterFunctionCalls = useCallback((text: string) => {
@@ -305,6 +307,12 @@ function AppContent() {
       return;
     }
 
+    if (!supabaseClient) {
+      toast.error('Checkout is currently unavailable. Please try again later.');
+      announce('Checkout is unavailable', 'assertive');
+      return;
+    }
+
     const loadingToast = toast.loading('Preparing your checkout...');
     setIsProcessingCheckout(true);
     announce('Processing payment', 'polite');
@@ -317,7 +325,7 @@ function AppContent() {
         quantity: item.quantity
       }));
 
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      const { data, error } = await supabaseClient.functions.invoke('create-checkout-session', {
         body: {
           cartItems: cartItems,
           customerInfo: session.customerInfo,
@@ -694,7 +702,7 @@ function AppContent() {
                 >
                   <button
                     onClick={processStripeCheckout}
-                    disabled={isProcessingCheckout}
+                    disabled={isProcessingCheckout || !isCheckoutAvailable}
                     className="btn-modern px-10 py-5 bg-gradient-to-r from-accent-500 to-accent-600 text-white rounded-2xl hover:from-accent-600 hover:to-accent-700 transition-all duration-300 font-bold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-4 group"
                   >
                     {isProcessingCheckout ? (
@@ -711,6 +719,12 @@ function AppContent() {
                     )}
                   </button>
                 </motion.div>
+              )}
+              {isCustomerInfoComplete && !isCheckoutAvailable && (
+                <div className="mt-4 text-sm text-red-500 flex items-center gap-2 justify-center" role="alert">
+                  <Info className="w-4 h-4" />
+                  Checkout is currently unavailable. Please try again later.
+                </div>
               )}
               <div ref={messagesEndRef} />
             </div>
